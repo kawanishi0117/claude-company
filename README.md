@@ -257,3 +257,4 @@ MIT License - 詳細は[LICENSE](LICENSE)ファイルを参照
 ---
 
 **Claude Company System** - AIが協力して開発する未来を、今すぐ体験してください。
+

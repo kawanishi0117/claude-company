@@ -82,15 +82,132 @@ graph TB
 
 **技術スタック:**
 - Frontend: React 18 + TypeScript + Vite
+- Styling: Tailwind CSS v3 + Headless UI
 - WebSocket: Socket.io-client
-- UI Framework: Material-UI v5
+- Charts: Chart.js + react-chartjs-2
+- Icons: Heroicons + Lucide React
 - State Management: Zustand
+- Animations: Framer Motion
+- Code Highlighting: Prism.js
 
 **主要機能:**
-- ユーザー指示入力フォーム
-- AIエージェント状況表示
-- リアルタイムログビューア
-- プロジェクト進捗ダッシュボード
+- レスポンシブ対応の進捗監視ダッシュボード
+- リアルタイムAIエージェント状況表示
+- インタラクティブなログビューア
+- 視覚的なプロジェクト進捗表示
+- ダークモード対応
+
+**UI Components Design:**
+
+```typescript
+// メインダッシュボードレイアウト
+interface DashboardLayout {
+  header: HeaderComponent;           // ナビゲーション + ダークモード切り替え
+  sidebar: SidebarComponent;         // プロジェクト一覧 + フィルター
+  mainContent: MainContentComponent; // 進捗表示エリア
+  footer: FooterComponent;           // ステータスバー
+}
+
+// AIエージェントステータスカード
+interface AgentStatusCard {
+  agentId: string;
+  agentType: 'boss' | 'subordinate';
+  status: 'idle' | 'working' | 'error';
+  currentTask?: string;
+  progress: number;
+  executionTime: number;
+  lastActivity: Date;
+  performanceMetrics: {
+    tasksCompleted: number;
+    averageExecutionTime: number;
+    successRate: number;
+  };
+}
+
+// プログレスダッシュボード
+interface ProgressDashboard {
+  overallProgress: {
+    completedTasks: number;
+    totalTasks: number;
+    estimatedCompletion: Date;
+  };
+  taskTimeline: TimelineItem[];
+  performanceCharts: ChartData[];
+  recentActivity: ActivityItem[];
+}
+
+// ログビューア
+interface LogViewer {
+  logs: LogEntry[];
+  filters: {
+    level: LogLevel[];
+    agentId: string[];
+    timeRange: DateRange;
+  };
+  searchQuery: string;
+  syntaxHighlighting: boolean;
+  autoScroll: boolean;
+}
+```
+
+**Tailwind CSS Design System:**
+
+```typescript
+// カラーパレット
+const colorScheme = {
+  primary: {
+    50: 'bg-blue-50',
+    500: 'bg-blue-500',
+    600: 'bg-blue-600',
+    700: 'bg-blue-700'
+  },
+  success: {
+    50: 'bg-green-50',
+    500: 'bg-green-500',
+    600: 'bg-green-600'
+  },
+  warning: {
+    50: 'bg-yellow-50',
+    500: 'bg-yellow-500',
+    600: 'bg-yellow-600'
+  },
+  error: {
+    50: 'bg-red-50',
+    500: 'bg-red-500',
+    600: 'bg-red-600'
+  },
+  neutral: {
+    50: 'bg-gray-50',
+    100: 'bg-gray-100',
+    200: 'bg-gray-200',
+    800: 'bg-gray-800',
+    900: 'bg-gray-900'
+  }
+};
+
+// レスポンシブブレークポイント
+const breakpoints = {
+  sm: '640px',   // モバイル
+  md: '768px',   // タブレット
+  lg: '1024px',  // デスクトップ
+  xl: '1280px',  // 大画面
+  '2xl': '1536px' // 超大画面
+};
+
+// コンポーネントスタイル
+const componentStyles = {
+  card: 'bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 p-6',
+  button: {
+    primary: 'bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200',
+    secondary: 'bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-gray-100 font-medium py-2 px-4 rounded-md transition-colors duration-200'
+  },
+  badge: {
+    success: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 px-2 py-1 rounded-full text-xs font-medium',
+    warning: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 px-2 py-1 rounded-full text-xs font-medium',
+    error: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 px-2 py-1 rounded-full text-xs font-medium'
+  }
+};
+```
 
 **API Endpoints:**
 ```typescript
@@ -101,11 +218,20 @@ interface DashboardAPI {
   // AIエージェント状況取得
   GET /api/agents/status
   
+  // 詳細エージェント情報取得
+  GET /api/agents/{id}/details
+  
   // ログストリーム接続
   WebSocket /ws/logs
   
   // プロジェクト進捗取得
   GET /api/projects/{id}/progress
+  
+  // パフォーマンス指標取得
+  GET /api/analytics/performance
+  
+  // タスクタイムライン取得
+  GET /api/projects/{id}/timeline
 }
 ```
 
@@ -439,6 +565,302 @@ volumes:
   "allowedTools": ["Bash", "Edit", "Create", "Delete"],
   "workspace": "/workspace"
 }
+```
+
+## UI/UX Design Specifications
+
+### 1. Dashboard Layout Structure
+
+**メインレイアウト (Grid System):**
+```html
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900">
+  <!-- Header -->
+  <header class="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
+    <!-- Navigation + Theme Toggle -->
+  </header>
+  
+  <!-- Main Content Grid -->
+  <div class="flex">
+    <!-- Sidebar -->
+    <aside class="w-64 bg-white dark:bg-gray-800 shadow-sm">
+      <!-- Project Navigation -->
+    </aside>
+    
+    <!-- Main Dashboard -->
+    <main class="flex-1 p-6">
+      <!-- Progress Overview Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <!-- Status Cards -->
+      </div>
+      
+      <!-- Agent Status Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 mb-8">
+        <!-- Agent Cards -->
+      </div>
+      
+      <!-- Charts and Timeline -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Progress Charts -->
+        <!-- Activity Timeline -->
+      </div>
+    </main>
+  </div>
+</div>
+```
+
+### 2. Agent Status Card Design
+
+**カードコンポーネント:**
+```typescript
+interface AgentCardProps {
+  agent: {
+    id: string;
+    name: string;
+    type: 'boss' | 'subordinate';
+    status: 'idle' | 'working' | 'error';
+    currentTask?: string;
+    progress: number;
+    executionTime: number;
+    avatar: string;
+  };
+}
+
+// Tailwind Classes for Status
+const statusStyles = {
+  idle: {
+    card: 'border-l-4 border-blue-500 bg-blue-50 dark:bg-blue-900/20',
+    badge: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+    icon: 'text-blue-500'
+  },
+  working: {
+    card: 'border-l-4 border-green-500 bg-green-50 dark:bg-green-900/20',
+    badge: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+    icon: 'text-green-500 animate-pulse'
+  },
+  error: {
+    card: 'border-l-4 border-red-500 bg-red-50 dark:bg-red-900/20',
+    badge: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+    icon: 'text-red-500'
+  }
+};
+```
+
+### 3. Progress Visualization Components
+
+**プログレスバーデザイン:**
+```html
+<!-- Animated Progress Bar -->
+<div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+  <div class="bg-gradient-to-r from-blue-500 to-blue-600 h-2.5 rounded-full transition-all duration-500 ease-out"
+       style="width: {progress}%">
+  </div>
+</div>
+
+<!-- Circular Progress -->
+<div class="relative w-16 h-16">
+  <svg class="w-16 h-16 transform -rotate-90">
+    <circle cx="32" cy="32" r="28" stroke="currentColor" stroke-width="4" 
+            fill="transparent" class="text-gray-200 dark:text-gray-700"/>
+    <circle cx="32" cy="32" r="28" stroke="currentColor" stroke-width="4" 
+            fill="transparent" stroke-dasharray="{circumference}" 
+            stroke-dashoffset="{offset}" 
+            class="text-blue-500 transition-all duration-500 ease-out"/>
+  </svg>
+  <div class="absolute inset-0 flex items-center justify-center">
+    <span class="text-sm font-semibold text-gray-900 dark:text-gray-100">
+      {progress}%
+    </span>
+  </div>
+</div>
+```
+
+### 4. Log Viewer Design
+
+**ログビューアコンポーネント:**
+```html
+<div class="bg-gray-900 rounded-lg overflow-hidden">
+  <!-- Log Header with Filters -->
+  <div class="bg-gray-800 px-4 py-3 border-b border-gray-700">
+    <div class="flex items-center justify-between">
+      <h3 class="text-white font-medium">Real-time Logs</h3>
+      <div class="flex space-x-2">
+        <!-- Filter Buttons -->
+        <button class="px-3 py-1 bg-gray-700 text-gray-300 rounded text-sm hover:bg-gray-600">
+          All
+        </button>
+        <button class="px-3 py-1 bg-blue-600 text-white rounded text-sm">
+          Boss AI
+        </button>
+        <button class="px-3 py-1 bg-gray-700 text-gray-300 rounded text-sm hover:bg-gray-600">
+          Sub AI
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Log Content -->
+  <div class="h-96 overflow-y-auto p-4 font-mono text-sm">
+    <!-- Syntax Highlighted Log Entries -->
+    <div class="space-y-2">
+      <div class="flex items-start space-x-3">
+        <span class="text-gray-500 text-xs mt-1">12:34:56</span>
+        <span class="bg-green-900 text-green-200 px-2 py-0.5 rounded text-xs">INFO</span>
+        <span class="text-gray-300 flex-1">Task execution started...</span>
+      </div>
+    </div>
+  </div>
+</div>
+```
+
+### 5. Modal Design for Agent Details
+
+**詳細モーダル:**
+```html
+<!-- Modal Overlay -->
+<div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+  <!-- Modal Content -->
+  <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+    <!-- Modal Header -->
+    <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+      <div class="flex items-center justify-between">
+        <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100">
+          Agent Details: Boss AI
+        </h2>
+        <button class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+          <XIcon class="w-6 h-6" />
+        </button>
+      </div>
+    </div>
+    
+    <!-- Modal Body -->
+    <div class="p-6 overflow-y-auto">
+      <!-- Tabs for different views -->
+      <div class="border-b border-gray-200 dark:border-gray-700 mb-6">
+        <nav class="-mb-px flex space-x-8">
+          <button class="border-b-2 border-blue-500 text-blue-600 py-2 px-1 text-sm font-medium">
+            Overview
+          </button>
+          <button class="border-b-2 border-transparent text-gray-500 hover:text-gray-700 py-2 px-1 text-sm font-medium">
+            Performance
+          </button>
+          <button class="border-b-2 border-transparent text-gray-500 hover:text-gray-700 py-2 px-1 text-sm font-medium">
+            History
+          </button>
+        </nav>
+      </div>
+      
+      <!-- Tab Content -->
+      <div class="space-y-6">
+        <!-- Performance Metrics -->
+        <!-- Task History -->
+        <!-- Real-time Status -->
+      </div>
+    </div>
+  </div>
+</div>
+```
+
+### 6. Responsive Design Breakpoints
+
+**モバイル対応:**
+```css
+/* Mobile First Approach */
+.dashboard-grid {
+  @apply grid grid-cols-1 gap-4;
+}
+
+/* Tablet */
+@media (min-width: 768px) {
+  .dashboard-grid {
+    @apply grid-cols-2 gap-6;
+  }
+}
+
+/* Desktop */
+@media (min-width: 1024px) {
+  .dashboard-grid {
+    @apply grid-cols-3 gap-6;
+  }
+}
+
+/* Large Desktop */
+@media (min-width: 1280px) {
+  .dashboard-grid {
+    @apply grid-cols-4 gap-8;
+  }
+}
+```
+
+### 7. Dark Mode Implementation
+
+**ダークモード切り替え:**
+```typescript
+// Tailwind Dark Mode Classes
+const darkModeClasses = {
+  background: 'bg-white dark:bg-gray-900',
+  card: 'bg-white dark:bg-gray-800',
+  text: {
+    primary: 'text-gray-900 dark:text-gray-100',
+    secondary: 'text-gray-600 dark:text-gray-400',
+    muted: 'text-gray-500 dark:text-gray-500'
+  },
+  border: 'border-gray-200 dark:border-gray-700',
+  input: 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600'
+};
+
+// Theme Toggle Component
+const ThemeToggle = () => {
+  const [isDark, setIsDark] = useState(false);
+  
+  const toggleTheme = () => {
+    setIsDark(!isDark);
+    document.documentElement.classList.toggle('dark');
+  };
+  
+  return (
+    <button
+      onClick={toggleTheme}
+      className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+    >
+      {isDark ? <SunIcon className="w-5 h-5" /> : <MoonIcon className="w-5 h-5" />}
+    </button>
+  );
+};
+```
+
+### 8. Animation and Transitions
+
+**Framer Motion アニメーション:**
+```typescript
+// Card Entrance Animation
+const cardVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { 
+    opacity: 1, 
+    y: 0,
+    transition: { duration: 0.3, ease: "easeOut" }
+  }
+};
+
+// Stagger Animation for Grid
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1
+    }
+  }
+};
+
+// Progress Bar Animation
+const progressVariants = {
+  initial: { width: 0 },
+  animate: { 
+    width: `${progress}%`,
+    transition: { duration: 1, ease: "easeOut" }
+  }
+};
 ```
 
 ## Security Considerations
