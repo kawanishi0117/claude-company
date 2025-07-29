@@ -1,0 +1,19 @@
+{
+  "model": "claude-3-5-sonnet-20241022",
+  "permission_mode": "bypassPermissions",
+  "workspace": "/workspace/boss",
+  "mcp_config": {
+    "servers": {
+      "browser": {
+        "command": "npx",
+        "args": ["@modelcontextprotocol/server-browser"]
+      }
+    }
+  },
+  "allowedTools": ["Bash", "Edit", "Create", "Delete", "Read"],
+  "settings": {
+    "auto_save": true,
+    "print_output": true,
+    "timeout": 300
+  }
+}

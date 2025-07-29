@@ -1,6 +1,11 @@
 # Implementation Plan
 
-- [ ] 1. プロジェクト構造とDocker環境のセットアップ
+- [x] 1. プロジェクト構造とDocker環境のセットアップ
+
+
+
+
+
   - プロジェクトのディレクトリ構造を作成
   - Docker Compose設定ファイルを作成
   - 各コンテナのDockerfileを作成
@@ -8,7 +13,11 @@
   - _Requirements: 1.1, 1.2, 8.1, 8.2_
 
 - [ ] 2. 基盤となるインターフェースとデータモデルの実装
-  - [ ] 2.1 共通データモデルの定義
+  - [x] 2.1 共通データモデルの定義
+
+
+
+
     - TypeScriptインターフェースでTask, Agent, Project, WorkResult等を定義
     - データバリデーション関数を実装
     - _Requirements: 1.1, 4.1, 4.4_

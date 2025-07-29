@@ -1,0 +1,165 @@
+version: '3.8'
+
+services:
+  # React Web Dashboard
+  dashboard:
+    build: 
+      context: ./dashboard
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_API_URL=http://localhost:8000
+      - REACT_APP_WS_URL=ws://localhost:8000
+    depends_on:
+      - redis
+      - boss-controller
+    networks:
+      - claude-network
+    restart: unless-stopped
+
+  # Boss AI Controller
+  boss-controller:
+    build:
+      context: ./docker/boss-ai
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - REDIS_URL=redis://redis:6379
+      - WORKSPACE_PATH=/workspace/boss
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - NODE_ENV=production
+    volumes:
+      - shared-git:/workspace/shared-git
+      - boss-workspace:/workspace/boss
+      - ./logs:/app/logs
+    depends_on:
+      - redis
+      - elasticsearch
+    networks:
+      - claude-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Subordinate AI Controllers (scalable)
+  subordinate-controller:
+    build:
+      context: ./docker/subordinate-ai
+      dockerfile: Dockerfile
+    environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - REDIS_URL=redis://redis:6379
+      - WORKSPACE_PATH=/workspace/sub
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - NODE_ENV=production
+    volumes:
+      - shared-git:/workspace/shared-git
+      - subordinate-workspace:/workspace/sub
+      - ./logs:/app/logs
+    depends_on:
+      - redis
+      - elasticsearch
+    networks:
+      - claude-network
+    restart: unless-stopped
+    deploy:
+      replicas: ${SUBORDINATE_REPLICAS:-3}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Redis for Task Queue
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-claudecompany}
+    volumes:
+      - redis-data:/data
+    networks:
+      - claude-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Elasticsearch for Log Aggregation
+  elasticsearch:
+    image: elasticsearch:8.8.0
+    ports:
+      - "9200:9200"
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    volumes:
+      - es-data:/usr/share/elasticsearch/data
+    networks:
+      - claude-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Kibana for Log Visualization
+  kibana:
+    image: kibana:8.8.0
+    ports:
+      - "5601:5601"
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    depends_on:
+      - elasticsearch
+    networks:
+      - claude-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5601/api/status || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Fluent Bit for Log Collection
+  fluent-bit:
+    image: fluent/fluent-bit:2.1
+    volumes:
+      - ./logs:/var/log
+      - ./docker/shared/fluent-bit.conf:/fluent-bit/etc/fluent-bit.conf
+    depends_on:
+      - elasticsearch
+    networks:
+      - claude-network
+    restart: unless-stopped
+
+# Docker Networks
+networks:
+  claude-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+# Docker Volumes
+volumes:
+  shared-git:
+    driver: local
+  boss-workspace:
+    driver: local
+  subordinate-workspace:
+    driver: local
+  redis-data:
+    driver: local
+  es-data:
+    driver: local
