@@ -18,6 +18,7 @@
 
 
 
+
     - TypeScriptインターフェースでTask, Agent, Project, WorkResult等を定義
     - データバリデーション関数を実装
     - _Requirements: 1.1, 4.1, 4.4_
