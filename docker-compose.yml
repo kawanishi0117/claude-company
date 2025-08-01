@@ -11,12 +11,22 @@ services:
     environment:
       - REACT_APP_API_URL=http://localhost:8000
       - REACT_APP_WS_URL=ws://localhost:8000
+      - FLUENT_BIT_HOST=fluent-bit
+      - FLUENT_BIT_PORT=24224
+    volumes:
+      - ./logs/dashboard:/app/logs
     depends_on:
       - redis
       - boss-controller
+      - fluent-bit
     networks:
       - claude-network
     restart: unless-stopped
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: localhost:24224
+        tag: "dashboard.{{.Name}}"
 
   # Boss AI Controller
   boss-controller:
@@ -31,13 +41,16 @@ services:
       - WORKSPACE_PATH=/workspace/boss
       - LOG_LEVEL=${LOG_LEVEL:-info}
       - NODE_ENV=production
+      - FLUENT_BIT_HOST=fluent-bit
+      - FLUENT_BIT_PORT=24224
     volumes:
       - shared-git:/workspace/shared-git
       - boss-workspace:/workspace/boss
-      - ./logs:/app/logs
+      - ./logs/boss:/app/logs
     depends_on:
       - redis
       - elasticsearch
+      - fluent-bit
     networks:
       - claude-network
     restart: unless-stopped
@@ -46,6 +59,11 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: localhost:24224
+        tag: "boss.{{.Name}}"
 
   # Subordinate AI Controllers (scalable)
   subordinate-controller:
@@ -58,13 +76,16 @@ services:
       - WORKSPACE_PATH=/workspace/sub
       - LOG_LEVEL=${LOG_LEVEL:-info}
       - NODE_ENV=production
+      - FLUENT_BIT_HOST=fluent-bit
+      - FLUENT_BIT_PORT=24224
     volumes:
       - shared-git:/workspace/shared-git
       - subordinate-workspace:/workspace/sub
-      - ./logs:/app/logs
+      - ./logs/subordinate:/app/logs
     depends_on:
       - redis
       - elasticsearch
+      - fluent-bit
     networks:
       - claude-network
     restart: unless-stopped
@@ -75,6 +96,11 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: localhost:24224
+        tag: "subordinate.{{.Name}}"
 
   # Redis for Task Queue
   redis:
@@ -120,6 +146,12 @@ services:
       - "5601:5601"
     environment:
       - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - KIBANA_HOST=localhost:5601
+      - ELASTICSEARCH_HOST=elasticsearch:9200
+    volumes:
+      - ./docker/shared/kibana.yml:/usr/share/kibana/config/kibana.yml
+      - ./docker/shared/kibana-dashboard.json:/usr/share/kibana/config/kibana-dashboard.json
+      - kibana-data:/usr/share/kibana/data
     depends_on:
       - elasticsearch
     networks:
@@ -134,14 +166,51 @@ services:
   # Fluent Bit for Log Collection
   fluent-bit:
     image: fluent/fluent-bit:2.1
+    ports:
+      - "2020:2020"  # HTTP monitoring port
+      - "24224:24224"  # Forward input port
+    environment:
+      - HOSTNAME=fluent-bit
+      - SERVICE_TYPE=log-collector
+      - NODE_ENV=${NODE_ENV:-production}
     volumes:
       - ./logs:/var/log
       - ./docker/shared/fluent-bit.conf:/fluent-bit/etc/fluent-bit.conf
+      - ./docker/shared/parsers.conf:/fluent-bit/etc/parsers.conf
+      - ./docker/shared/add_timestamp.lua:/fluent-bit/etc/add_timestamp.lua
+      - fluent-bit-storage:/tmp/fluent-bit
     depends_on:
       - elasticsearch
     networks:
       - claude-network
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:2020/api/v1/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Kibana Setup Service (runs once)
+  kibana-setup:
+    image: curlimages/curl:8.1.2
+    depends_on:
+      - kibana
+      - elasticsearch
+    volumes:
+      - ./docker/shared/setup-kibana.sh:/setup-kibana.sh
+      - ./docker/shared/kibana-dashboard.json:/usr/share/kibana/config/kibana-dashboard.json
+    networks:
+      - claude-network
+    environment:
+      - KIBANA_HOST=kibana:5601
+      - ELASTICSEARCH_HOST=elasticsearch:9200
+    command: sh -c "chmod +x /setup-kibana.sh && /setup-kibana.sh"
+    restart: "no"
 
 # Docker Networks
 networks:
@@ -162,4 +231,8 @@ volumes:
   redis-data:
     driver: local
   es-data:
+    driver: local
+  fluent-bit-storage:
+    driver: local
+  kibana-data:
     driver: local

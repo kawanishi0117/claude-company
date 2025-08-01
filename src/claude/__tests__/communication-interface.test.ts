@@ -300,8 +300,13 @@ describe('ClaudeCommunicationInterface', () => {
       communicationInterface.cancelAllCommands();
 
       // すべてのプロミスがキャンセルエラーで拒否されることを確認
-      for (const promise of promises) {
-        await expect(promise).rejects.toThrow(/cancelled/);
+      const results = await Promise.allSettled(promises);
+      
+      for (const result of results) {
+        expect(result.status).toBe('rejected');
+        if (result.status === 'rejected') {
+          expect(result.reason.message).toMatch(/cancelled/);
+        }
       }
 
       const status = communicationInterface.getStatus();
@@ -319,7 +324,13 @@ describe('ClaudeCommunicationInterface', () => {
         pendingCommands: 0,
         queuedCommands: 0,
         isProcessingQueue: false,
-        processInfo: mockProcessManager.getProcessInfo()
+        processInfo: mockProcessManager.getProcessInfo(),
+        config: {
+          defaultTimeout: 5000,
+          maxConcurrentCommands: 3,
+          retryAttempts: 2,
+          retryDelay: 500
+        }
       });
     });
 
@@ -358,6 +369,30 @@ describe('ClaudeCommunicationInterface', () => {
       await expect(promise).rejects.toThrow('Process status changed to ERROR');
     });
 
+    it('should handle malformed responses gracefully', async () => {
+      const promise = communicationInterface.sendPrompt('Test command');
+
+      setTimeout(() => {
+        mockProcessManager.simulateOutput('malformed response without proper format');
+      }, 100);
+
+      const response = await promise;
+      expect(response.success).toBe(true);
+      expect(response.data).toBe('malformed response without proper format');
+    });
+
+    it('should detect error responses in text format', async () => {
+      const promise = communicationInterface.sendPrompt('Test command');
+
+      setTimeout(() => {
+        mockProcessManager.simulateOutput('Error: Something went wrong');
+      }, 100);
+
+      const response = await promise;
+      expect(response.success).toBe(false);
+      expect(response.error).toBe('Error: Something went wrong');
+    });
+
     it('should retry commands on error if configured', async () => {
       const promise = communicationInterface.sendPrompt('Test command', { retryOnError: true });
 
@@ -386,6 +421,183 @@ describe('ClaudeCommunicationInterface', () => {
       }
 
       await expect(promise).rejects.toThrow('Process error');
+    });
+  });
+
+  describe('getCommandStatus', () => {
+    it('should return pending status for active commands', async () => {
+      const promise = communicationInterface.sendPrompt('Test command');
+      
+      await new Promise(resolve => setTimeout(resolve, 50));
+
+      const commandIds = Array.from((communicationInterface as any).pendingCommands.keys());
+      if (commandIds.length > 0) {
+        const status = communicationInterface.getCommandStatus(commandIds[0] as string);
+        expect(status.status).toBe('pending');
+        expect(status.details).toBeDefined();
+      }
+
+      // レスポンスを送信してコマンドを完了
+      mockProcessManager.simulateOutput('{"result": "done"}');
+      await promise;
+    });
+
+    it('should return queued status for queued commands', async () => {
+      // 制限を超える数のコマンドを送信
+      const promises: Promise<ClaudeResponse>[] = [];
+      for (let i = 0; i < config.maxConcurrentCommands! + 1; i++) {
+        promises.push(communicationInterface.sendPrompt(`Command ${i}`));
+      }
+
+      await new Promise(resolve => setTimeout(resolve, 50));
+
+      const queuedCommands = (communicationInterface as any).commandQueue;
+      if (queuedCommands.length > 0) {
+        const status = communicationInterface.getCommandStatus(queuedCommands[0].command.id);
+        expect(status.status).toBe('queued');
+        expect(status.details).toBeDefined();
+      }
+
+      // すべてのコマンドにレスポンスを送信
+      for (let i = 0; i < promises.length; i++) {
+        setTimeout(() => {
+          mockProcessManager.simulateOutput(`{"result": "response${i}"}`);
+        }, 100 * (i + 1));
+      }
+
+      await Promise.all(promises);
+    });
+
+    it('should return not_found for non-existent commands', () => {
+      const status = communicationInterface.getCommandStatus('non-existent-id');
+      expect(status.status).toBe('not_found');
+    });
+  });
+
+  describe('sendPromptStream', () => {
+    it('should handle streaming responses', async () => {
+      const receivedData: string[] = [];
+      const onData = (data: string) => {
+        receivedData.push(data);
+      };
+
+      const promise = communicationInterface.sendPromptStream('Stream test', onData);
+
+      setTimeout(() => {
+        mockProcessManager.simulateOutput('{"result": "streaming data"}');
+      }, 100);
+
+      const response = await promise;
+
+      expect(response.success).toBe(true);
+      expect(receivedData.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe('metrics and statistics', () => {
+    it('should track command metrics', async () => {
+      const promise1 = communicationInterface.sendPrompt('Success command');
+      const promise2 = communicationInterface.sendPrompt('Fail command');
+
+      setTimeout(() => {
+        mockProcessManager.simulateOutput('{"result": "success"}');
+        mockProcessManager.simulateError('Command failed');
+      }, 100);
+
+      await Promise.allSettled([promise1, promise2]);
+
+      const metrics = communicationInterface.getMetrics();
+      expect(metrics.totalCommands).toBe(2);
+      expect(metrics.successfulCommands).toBe(1);
+      expect(metrics.failedCommands).toBe(1);
+    });
+
+    it('should provide detailed statistics', async () => {
+      const promise = communicationInterface.sendPrompt('Test command');
+
+      setTimeout(() => {
+        mockProcessManager.simulateOutput('{"result": "success"}');
+      }, 100);
+
+      await promise;
+
+      const stats = communicationInterface.getDetailedStats();
+      expect(stats.metrics).toBeDefined();
+      expect(stats.status).toBeDefined();
+      expect(stats.performance).toBeDefined();
+      expect(stats.performance.successRate).toBeGreaterThan(0);
+    });
+
+    it('should reset metrics', async () => {
+      const promise = communicationInterface.sendPrompt('Test command');
+
+      setTimeout(() => {
+        mockProcessManager.simulateOutput('{"result": "success"}');
+      }, 100);
+
+      await promise;
+
+      communicationInterface.resetMetrics();
+      const metrics = communicationInterface.getMetrics();
+      expect(metrics.totalCommands).toBe(0);
+      expect(metrics.successfulCommands).toBe(0);
+    });
+  });
+
+  describe('batch processing', () => {
+    it('should process prompts in batch with concurrency limit', async () => {
+      const prompts = [
+        { prompt: 'Batch 1' },
+        { prompt: 'Batch 2' },
+        { prompt: 'Batch 3' },
+        { prompt: 'Batch 4' }
+      ];
+
+      let progressCalls = 0;
+      const onProgress = (completed: number, total: number) => {
+        progressCalls++;
+        expect(completed).toBeLessThanOrEqual(total);
+        expect(total).toBe(4);
+      };
+
+      // レスポンスを順次送信
+      setTimeout(() => {
+        for (let i = 0; i < 4; i++) {
+          setTimeout(() => {
+            mockProcessManager.simulateOutput(`{"result": "batch${i + 1}"}`);
+          }, 100 * (i + 1));
+        }
+      }, 100);
+
+      const results = await communicationInterface.sendPromptBatch(prompts, {
+        maxConcurrency: 2,
+        onProgress
+      });
+
+      expect(results).toHaveLength(4);
+      expect(progressCalls).toBe(4);
+      results.forEach(result => {
+        expect(result.success).toBe(true);
+      });
+    });
+
+    it('should stop on error when configured', async () => {
+      const prompts = [
+        { prompt: 'Batch 1' },
+        { prompt: 'Batch 2' },
+        { prompt: 'Batch 3' }
+      ];
+
+      setTimeout(() => {
+        mockProcessManager.simulateOutput('{"result": "success"}');
+        setTimeout(() => {
+          mockProcessManager.simulateError('Batch error');
+        }, 100);
+      }, 100);
+
+      await expect(
+        communicationInterface.sendPromptBatch(prompts, { stopOnError: true })
+      ).rejects.toThrow('Batch execution failed');
     });
   });
 

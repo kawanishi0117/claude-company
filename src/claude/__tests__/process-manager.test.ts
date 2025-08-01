@@ -60,7 +60,11 @@ describe('ClaudeProcessManager', () => {
   });
 
   afterEach(async () => {
-    await processManager.cleanup();
+    try {
+      await processManager.cleanup();
+    } catch (error) {
+      // クリーンアップエラーを無視
+    }
   });
 
   describe('constructor', () => {

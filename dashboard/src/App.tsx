@@ -1,44 +1,61 @@
-import React from 'react';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
-import CssBaseline from '@mui/material/CssBaseline';
-import { Container, Typography, Paper, Box } from '@mui/material';
-
-const theme = createTheme({
-  palette: {
-    mode: 'light',
-    primary: {
-      main: '#1976d2',
-    },
-    secondary: {
-      main: '#dc004e',
-    },
-  },
-});
+import React, { useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { useDashboardStore } from './store';
+import { webSocketService } from './services/websocket';
+import { globalErrorHandler } from './utils/errorHandler';
+import { useToast } from './contexts/ToastContext';
+import Layout from './components/Layout';
+import Dashboard from './pages/Dashboard';
+import Analytics from './pages/Analytics';
+import ErrorBoundary from './components/ErrorBoundary';
 
 function App() {
+  const { darkMode } = useDashboardStore();
+  const { addToast } = useToast();
+
+  useEffect(() => {
+    // Apply dark mode class to document
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [darkMode]);
+
+  useEffect(() => {
+    // Initialize WebSocket connection
+    console.log('Initializing WebSocket connection...');
+
+    // Cleanup on unmount
+    return () => {
+      webSocketService.disconnect();
+    };
+  }, []);
+
+  useEffect(() => {
+    // Setup global error handler
+    globalErrorHandler.setErrorCallback((error, toast) => {
+      console.error('Global error:', error);
+      
+      if (toast) {
+        addToast(toast);
+      }
+    });
+  }, [addToast]);
+
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <Container maxWidth="lg">
-        <Box sx={{ my: 4 }}>
-          <Typography variant="h2" component="h1" gutterBottom align="center">
-            Claude Company System
-          </Typography>
-          <Paper elevation={3} sx={{ p: 4, mt: 4 }}>
-            <Typography variant="h4" component="h2" gutterBottom>
-              Dashboard
-            </Typography>
-            <Typography variant="body1" paragraph>
-              Welcome to the Claude Company System dashboard. This hierarchical AI development system 
-              automates project development through AI collaboration.
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              System Status: Initializing...
-            </Typography>
-          </Paper>
-        </Box>
-      </Container>
-    </ThemeProvider>
+    <ErrorBoundary>
+      <div className="h-full">
+        <Router>
+          <Layout>
+            <Routes>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/analytics" element={<Analytics />} />
+            </Routes>
+          </Layout>
+        </Router>
+      </div>
+    </ErrorBoundary>
   );
 }
 

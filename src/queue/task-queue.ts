@@ -201,6 +201,40 @@ export class TaskQueue extends EventEmitter {
   }
 
   /**
+   * Submit work result to result queue
+   */
+  public async submitResult(workResult: WorkResult): Promise<string> {
+    this.ensureInitialized();
+    
+    try {
+      // Validate the work result
+      const validatedResult = validateWorkResult(workResult);
+      
+      // Create result job
+      const resultJob: ResultJob = {
+        id: `result-${workResult.taskId}-${Date.now()}`,
+        workResult: validatedResult,
+        createdAt: new Date()
+      };
+
+      // Add to result queue
+      const job = await this.resultQueue.add('process-result', resultJob, {
+        priority: JOB_PRIORITIES.NORMAL,
+        attempts: 3
+      });
+
+      console.log(`Work result submitted for task ${workResult.taskId} with job ID: ${job.id}`);
+      this.emit('result:submitted', resultJob);
+
+      return job.id?.toString() || resultJob.id;
+      
+    } catch (error) {
+      console.error('Failed to submit work result:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Mark a task as failed
    */
   public async failTask(taskId: string, error: Error): Promise<void> {

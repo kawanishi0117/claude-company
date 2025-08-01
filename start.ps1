@@ -15,12 +15,17 @@ try {
 
 # Check if .env file exists
 if (-not (Test-Path ".env")) {
-    Write-Host "✗ .env file not found. Creating from .env.example..." -ForegroundColor Yellow
-    Copy-Item ".env.example" ".env"
-    Write-Host "✓ Created .env file. Please edit it with your ANTHROPIC_API_KEY" -ForegroundColor Green
-    Write-Host "Opening .env file for editing..." -ForegroundColor Yellow
-    notepad .env
-    Read-Host "Press Enter after setting your API key to continue"
+    if (Test-Path ".env.example") {
+        Write-Host "✗ .env file not found. Creating from .env.example..." -ForegroundColor Yellow
+        Copy-Item ".env.example" ".env"
+        Write-Host "✓ Created .env file. Please edit it with your ANTHROPIC_API_KEY" -ForegroundColor Green
+        Write-Host "Opening .env file for editing..." -ForegroundColor Yellow
+        notepad .env
+        Read-Host "Press Enter after setting your API key to continue"
+    } else {
+        Write-Host "✗ Neither .env nor .env.example found. Please create .env file with ANTHROPIC_API_KEY" -ForegroundColor Red
+        exit 1
+    }
 }
 
 # Validate API key

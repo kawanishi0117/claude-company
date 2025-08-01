@@ -16,13 +16,19 @@ echo + Docker is running
 
 REM Check if .env file exists
 if not exist ".env" (
-    echo X .env file not found. Creating from .env.example...
-    copy ".env.example" ".env" >nul
-    echo + Created .env file. Please edit it with your ANTHROPIC_API_KEY
-    echo Opening .env file for editing...
-    notepad .env
-    echo Press any key after setting your API key to continue...
-    pause >nul
+    if exist ".env.example" (
+        echo X .env file not found. Creating from .env.example...
+        copy ".env.example" ".env" >nul
+        echo + Created .env file. Please edit it with your ANTHROPIC_API_KEY
+        echo Opening .env file for editing...
+        notepad .env
+        echo Press any key after setting your API key to continue...
+        pause >nul
+    ) else (
+        echo X Neither .env nor .env.example found. Please create .env file with ANTHROPIC_API_KEY
+        pause
+        exit /b 1
+    )
 )
 
 REM Validate API key (basic check)

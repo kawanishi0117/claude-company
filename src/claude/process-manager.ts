@@ -436,6 +436,12 @@ export class ClaudeProcessManager extends EventEmitter {
    * リソースのクリーンアップ
    */
   async cleanup(): Promise<void> {
+    // ヘルスチェックを停止
+    if (this.healthCheckInterval) {
+      clearInterval(this.healthCheckInterval);
+      this.healthCheckInterval = null;
+    }
+    
     await this.stop();
     this.removeAllListeners();
   }
