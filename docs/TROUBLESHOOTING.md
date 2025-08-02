@@ -1,5 +1,12 @@
 # Claude Company System - Troubleshooting Guide
 
+## 言語選択 / Language Selection
+
+- [English](TROUBLESHOOTING.md) ← Current page
+- [日本語](TROUBLESHOOTING.ja.md)
+
+---
+
 Comprehensive troubleshooting guide for common issues and their resolutions.
 
 ## Table of Contents

@@ -1,13 +1,6 @@
 # CLAUDE.md
 
-## 言語選択 / Language Selection
-
-- [English](CLAUDE.md) ← Current page
-- [日本語](CLAUDE.ja.md)
-
----
-
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+このファイルは、このリポジトリのコードを扱う際のClaude Code（claude.ai/code）向けのガイダンスを提供します。
 
 ## プロジェクト概要
 
@@ -176,3 +169,10 @@ docker-compose logs -f fluent-bit                       # ログ収集状況
 # Windows PowerShell
 .\status.ps1  # 全サービスの状態確認
 ```
+
+---
+
+## 言語選択 / Language Selection
+
+- [English](CLAUDE.md)
+- [日本語](CLAUDE.ja.md) ← 現在のページ

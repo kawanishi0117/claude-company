@@ -1,5 +1,12 @@
 # Claude Company System
 
+## 言語選択 / Language Selection
+
+- [English](README.md) ← Current page
+- [日本語](README.ja.md)
+
+---
+
 A hierarchical AI development system that automates project development through AI collaboration. The system operates on Windows Docker environments where a Boss AI manages multiple Subordinate AIs to execute development tasks.
 
 ## Quick Start
