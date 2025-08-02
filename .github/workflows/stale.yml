@@ -1,0 +1,22 @@
+name: "Close stale issues and PRs"
+
+on:
+  schedule:
+    - cron: "0 0 * * *"  # 毎日深夜に実行
+  workflow_dispatch:     # 手動実行も可能
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/stale@v9
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          stale-issue-message: >
+            このIssueは30日間アクティビティがないため、古いと判断されました。7日以内にアクションがない場合は自動的にクローズされます。
+          stale-pr-message: >
+            このPRは30日間アクティビティがないため、古いと判断されました。7日以内にアクションがない場合は自動的にクローズされます。
+          days-before-stale: 30
+          days-before-close: 7
+          exempt-issue-labels: "keep-open"
+          exempt-pr-labels: "keep-open"

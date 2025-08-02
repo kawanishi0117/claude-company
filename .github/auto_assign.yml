@@ -1,0 +1,7 @@
+addReviewers: true
+reviewers:
+  - kawanishi0117
+skipKeywords:
+  - wip
+  - draft
+  - do not review

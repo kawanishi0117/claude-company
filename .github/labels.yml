@@ -1,0 +1,65 @@
+# Claude Company System - GitHub Labels Configuration (簡略版)
+
+# カテゴリ別ラベル
+backend:
+  name: "backend"
+  color: "0E76A8"  # 青
+  description: "バックエンド関連の変更"
+
+frontend:
+  name: "frontend"
+  color: "F7DF1E"  # 黄色
+  description: "フロントエンド関連の変更"
+
+infra:
+  name: "infra"
+  color: "FF6B35"  # オレンジ
+  description: "インフラ・Docker関連の変更"
+
+# 変更タイプ
+bug:
+  name: "bug"
+  color: "DC2626"  # 赤
+  description: "バグ修正"
+
+feature:
+  name: "feature"
+  color: "3B82F6"  # 明るい青
+  description: "新機能"
+
+enhancement:
+  name: "enhancement"
+  color: "8B5CF6"  # 紫
+  description: "機能改善"
+
+docs:
+  name: "docs"
+  color: "6B7280"  # グレー
+  description: "ドキュメント関連"
+
+# 優先度
+priority-high:
+  name: "priority: high"
+  color: "DC2626"  # 赤
+  description: "高優先度"
+
+priority-low:
+  name: "priority: low"
+  color: "14B8A6"  # ティール
+  description: "低優先度"
+
+# 特殊ラベル
+security:
+  name: "security"
+  color: "DC2626"  # 赤
+  description: "セキュリティ関連"
+
+dependencies:
+  name: "dependencies"
+  color: "A855F7"  # 薄い紫
+  description: "依存関係の更新"
+
+good-first-issue:
+  name: "good first issue"
+  color: "22C55E"  # ライムグリーン
+  description: "初心者向け" 

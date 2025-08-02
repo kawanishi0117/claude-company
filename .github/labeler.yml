@@ -1,0 +1,40 @@
+# Claude Company System - Auto Labeler Configuration (簡略版)
+
+# カテゴリ別ラベル
+backend:
+  - changed-files:
+    - any-glob-to-any-file: 'src/claude/**'
+    - any-glob-to-any-file: 'src/controllers/**'
+    - any-glob-to-any-file: 'src/models/**'
+    - any-glob-to-any-file: 'src/queue/**'
+    - any-glob-to-any-file: 'src/git/**'
+    - any-glob-to-any-file: 'src/integration/**'
+
+frontend:
+  - changed-files:
+    - any-glob-to-any-file: 'dashboard/**'
+
+infra:
+  - changed-files:
+    - any-glob-to-any-file: '.github/**'
+    - any-glob-to-any-file: 'docker/**'
+    - any-glob-to-any-file: 'docker-compose.yml'
+    - any-glob-to-any-file: 'Dockerfile'
+    - any-glob-to-any-file: '.dockerignore'
+
+# 変更タイプ
+docs:
+  - changed-files:
+    - any-glob-to-any-file: '**/*.md'
+    - any-glob-to-any-file: 'docs/**'
+
+dependencies:
+  - changed-files:
+    - any-glob-to-any-file: '**/package.json'
+    - any-glob-to-any-file: '**/package-lock.json'
+    - any-glob-to-any-file: '**/yarn.lock'
+
+security:
+  - changed-files:
+    - any-glob-to-any-file: '.github/workflows/codeql.yml'
+    - any-glob-to-any-file: '**/security/**' 
