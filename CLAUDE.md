@@ -6,6 +6,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 階層型AI開発システム「Claude Company System」は、Boss AIが複数のSubordinate AIを管理してプロジェクト開発を自動化するシステムです。Windows Docker環境で動作し、タスクキューとRedisを使用した分散処理を行います。
 
+### システムアーキテクチャの重要ポイント
+- Boss AIは`ClaudeCommandExecutor`を使用してClaude Code CLIを直接制御
+- タスクはRedis/Bullキューを通じて非同期的に処理
+- 各AIコンテナは独立したClaude Code CLIインスタンスを保持
+- WebSocketを使用してリアルタイムでダッシュボードに進捗を通知
+
 ## 開発コマンド
 
 ### テスト実行
@@ -18,6 +24,10 @@ npm run test:coverage   # カバレッジ付きテスト実行
 jest src/claude/__tests__/communication-interface.test.ts
 jest src/models/validation.test.ts
 jest src/queue/task-queue.test.ts
+
+# 特定のテストスイートのみ実行
+jest --testNamePattern="BossController"
+jest --testPathPattern="controllers"
 ```
 
 ### ビルドとチェック
@@ -31,8 +41,13 @@ npm run dev            # 開発サーバー起動
 ### Docker環境
 ```bash
 # システム起動（Windows）
-.\start.ps1            # PowerShell
+.\start.ps1            # PowerShell（推奨）
 start.bat              # Command Prompt
+
+# 拡張起動オプション（PowerShell）
+.\start-enhanced.ps1 -Replicas 5 -Verbose      # Subordinate AI数指定・詳細ログ
+.\start-enhanced.ps1 -Development -NoCache      # 開発モード・キャッシュ無効
+.\start-enhanced.ps1 -SkipHealthCheck           # ヘルスチェックスキップ
 
 # Docker操作
 docker-compose up -d                              # バックグラウンド起動
@@ -50,9 +65,19 @@ docker-compose logs -f dashboard
 
 ### 主要コンポーネント
 - **Boss AI Controller** (`src/controllers/boss-controller.ts`): ユーザー指示の処理、タスク分解、コードレビューを担当
+  - `processUserInstruction()`: ユーザー指示をタスクに分解
+  - `reviewWorkResult()`: 部下AIの成果物をレビュー
+  - `runIntegrationTests()`: 統合テストの実行
 - **Command Executor** (`src/claude/command-executor.ts`): Claude Code CLIコマンドの実行とレスポンス処理
+  - `executeCommand()`: 基本的なコマンド実行
+  - `sendPromptExpectJSON()`: JSON形式でのレスポンス取得
+  - `executeCommandsConcurrently()`: 複数コマンドの並列実行
 - **Process Manager** (`src/claude/process-manager.ts`): Claude Code CLIプロセスのライフサイクル管理
+  - プロセスの起動・停止・再起動
+  - ヘルスチェックとメトリクス収集
 - **Task Queue** (`src/queue/task-queue.ts`): Redis/Bullベースのタスクキューシステム
+  - 優先度ベースのタスク処理
+  - リトライとデッドレターキュー
 - **Data Models** (`src/models/`): 型定義とバリデーション
 
 ### Docker構成
@@ -120,8 +145,27 @@ docker-compose logs -f dashboard
 - Docker環境変数は`docker-compose.yml`で定義
 - MCP設定は各コンテナの`mcp-config.json`で管理
 
+### ログとデバッグ
+```bash
+# ログ確認
+docker-compose logs -f --tail=100 boss-controller      # Boss AIのログ
+docker-compose logs -f subordinate-controller          # 全Subordinate AIのログ
+
+# 特定のSubordinate AIのログ（インスタンス番号指定）
+docker-compose logs -f subordinate-controller_2
+
+# Fluent Bitによる構造化ログ
+docker-compose logs -f fluent-bit                       # ログ収集状況
+```
+
 ## アクセスポイント
 - Dashboard: http://localhost:3000
 - API: http://localhost:8000  
 - Kibana: http://localhost:5601
 - Redis: localhost:6379
+
+## システムステータス確認
+```powershell
+# Windows PowerShell
+.\status.ps1  # 全サービスの状態確認
+```
