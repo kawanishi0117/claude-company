@@ -1,5 +1,12 @@
 # Claude Company System - Setup Guide
 
+## 言語選択 / Language Selection
+
+- [English](SETUP.md) ← Current page
+- [日本語](SETUP.ja.md)
+
+---
+
 Complete setup instructions for deploying the Claude Company System on Windows.
 
 ## Table of Contents
