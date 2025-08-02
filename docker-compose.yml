@@ -95,10 +95,10 @@ services:
       timeout: 10s
       retries: 3
     logging:
-      driver: fluentd
+      driver: "json-file"
       options:
-        fluentd-address: localhost:24224
-        tag: "subordinate.{{.Name}}"
+        max-size: "10m"
+        max-file: "3"
 
   # Redis for Task Queue
   redis:
