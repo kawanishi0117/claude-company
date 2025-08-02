@@ -1,0 +1,73 @@
+version: 2
+updates:
+  # メインのTypeScriptプロジェクト - セキュリティアップデート専用
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "kawanishi0117"
+    assignees:
+      - "kawanishi0117"
+    # セキュリティアップデートに限定
+    security-updates: true
+    # 直接依存関係のみ対象
+    allow:
+      - dependency-type: "direct"
+    # high以上の深刻度のみ対応（lowとmoderateは無視）
+    ignore:
+      - severity: "low"
+      - severity: "moderate"
+    # ラベルを追加してフィルタリングしやすく
+    labels:
+      - "security"
+      - "dependencies"
+      - "npm"
+
+  # ダッシュボード（React）プロジェクト - セキュリティアップデート専用
+  - package-ecosystem: "npm"
+    directory: "/dashboard"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "kawanishi0117"
+    assignees:
+      - "kawanishi0117"
+    # セキュリティアップデートに限定
+    security-updates: true
+    # 直接依存関係のみ対象
+    allow:
+      - dependency-type: "direct"
+    # high以上の深刻度のみ対応（lowとmoderateは無視）
+    ignore:
+      - severity: "low"
+      - severity: "moderate"
+    # ラベルを追加してフィルタリングしやすく
+    labels:
+      - "security"
+      - "dependencies"
+      - "dashboard"
+
+  # Docker関連の更新 - セキュリティアップデート専用
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "kawanishi0117"
+    assignees:
+      - "kawanishi0117"
+    # セキュリティアップデートに限定
+    security-updates: true
+    # high以上の深刻度のみ対応（lowとmoderateは無視）
+    ignore:
+      - severity: "low"
+      - severity: "moderate"
+    # ラベルを追加してフィルタリングしやすく
+    labels:
+      - "security"
+      - "dependencies"
+      - "docker"

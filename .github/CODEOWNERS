@@ -1,0 +1,6 @@
+# CODEOWNERS
+# このファイルは、プルリクエスト時に自動的にレビュワーを割り当てるために使用されます
+# 各行の形式: path/to/directory @username または @team/name
+
+# デフォルトのオーナー（すべてのファイル）
+* @kawanishi0117

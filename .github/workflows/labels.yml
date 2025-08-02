@@ -1,0 +1,74 @@
+name: Manage Labels
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+    paths:
+      - '.github/labels.yml'
+
+jobs:
+  sync-labels:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install js-yaml
+        run: npm install js-yaml
+
+      - name: Sync Labels
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const yaml = require('js-yaml');
+            
+            // ラベル設定ファイルを読み込み
+            const labelsConfig = yaml.load(fs.readFileSync('.github/labels.yml', 'utf8'));
+            
+            // 既存のラベルを取得
+            const existingLabels = await github.rest.issues.listLabelsForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo
+            });
+            
+            // 新しいラベルを設定
+            for (const [key, label] of Object.entries(labelsConfig)) {
+              const labelName = label.name;
+              const labelColor = label.color;
+              const labelDescription = label.description;
+              
+              // 既存のラベルかチェック
+              const existingLabel = existingLabels.data.find(l => l.name === labelName);
+              
+              if (existingLabel) {
+                // 既存ラベルを更新
+                await github.rest.issues.updateLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  name: labelName,
+                  color: labelColor,
+                  description: labelDescription
+                });
+                console.log(`Updated label: ${labelName}`);
+              } else {
+                // 新しいラベルを作成
+                await github.rest.issues.createLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  name: labelName,
+                  color: labelColor,
+                  description: labelDescription
+                });
+                console.log(`Created label: ${labelName}`);
+              }
+            }
+            
+            console.log('Labels sync completed!'); 
