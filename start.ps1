@@ -5,11 +5,42 @@ Write-Host "=== Claude Company System Startup ===" -ForegroundColor Green
 Write-Host "Initializing Docker environment..." -ForegroundColor Yellow
 
 # Check if Docker is running
-try {
-    docker version | Out-Null
-    Write-Host "✓ Docker is running" -ForegroundColor Green
-} catch {
-    Write-Host "✗ Docker is not running. Please start Docker Desktop." -ForegroundColor Red
+$dockerRunning = $false
+$maxAttempts = 3
+$attemptCount = 0
+
+while (-not $dockerRunning -and $attemptCount -lt $maxAttempts) {
+    try {
+        docker version | Out-Null
+        $dockerRunning = $true
+        Write-Host "✓ Docker is running" -ForegroundColor Green
+    } catch {
+        $attemptCount++
+        if ($attemptCount -eq 1) {
+            Write-Host "✗ Docker is not running. Attempting to start Docker Desktop..." -ForegroundColor Yellow
+            
+            # Try to start Docker Desktop
+            $dockerDesktopPath = "$env:ProgramFiles\Docker\Docker\Docker Desktop.exe"
+            if (Test-Path $dockerDesktopPath) {
+                Start-Process "$dockerDesktopPath"
+                Write-Host "  Starting Docker Desktop... Please wait (this may take 30-60 seconds)" -ForegroundColor Yellow
+                Start-Sleep -Seconds 30
+            } else {
+                Write-Host "✗ Docker Desktop not found at expected location" -ForegroundColor Red
+                Write-Host "  Please start Docker Desktop manually from the Start Menu" -ForegroundColor Yellow
+                Read-Host "Press Enter after Docker Desktop is running"
+            }
+        } elseif ($attemptCount -lt $maxAttempts) {
+            Write-Host "  Waiting for Docker to start... (attempt $attemptCount of $maxAttempts)" -ForegroundColor Yellow
+            Start-Sleep -Seconds 15
+        }
+    }
+}
+
+if (-not $dockerRunning) {
+    Write-Host "✗ Failed to connect to Docker after $maxAttempts attempts" -ForegroundColor Red
+    Write-Host "  Please ensure Docker Desktop is installed and running" -ForegroundColor Yellow
+    Write-Host "  You can download it from: https://www.docker.com/products/docker-desktop" -ForegroundColor Cyan
     exit 1
 }
 
