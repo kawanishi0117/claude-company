@@ -44,7 +44,7 @@ RUN mkdir -p /workspace/sub /workspace/shared-git
 
 # Copy package.json and install dependencies
 COPY package*.json ./
-RUN npm install --only=production
+RUN npm install
 
 # Copy application source code
 COPY src/ ./src/
@@ -52,6 +52,9 @@ COPY tsconfig.json ./
 
 # Build TypeScript
 RUN npm run build
+
+# Remove dev dependencies after build
+RUN npm prune --production
 
 # Create non-root user for security
 RUN useradd -m -s /bin/bash claude-sub \
