@@ -40,7 +40,7 @@ RUN mkdir -p /workspace/boss /workspace/shared-git
 
 # Copy package.json and install dependencies
 COPY package*.json ./
-RUN npm ci --only=production
+RUN npm install --only=production
 
 # Copy application source code
 COPY src/ ./src/
@@ -61,7 +61,7 @@ USER claude-boss
 
 # Set up Claude Code CLI configuration
 RUN mkdir -p /home/claude-boss/.config/claude
-COPY --chown=claude-boss:claude-boss docker/boss-ai/claude-config.json /home/claude-boss/.config/claude/config.json
+COPY --chown=claude-boss:claude-boss claude-config.json /home/claude-boss/.config/claude/config.json
 
 # Expose port for health checks and API
 EXPOSE 8000

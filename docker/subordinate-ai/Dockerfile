@@ -44,7 +44,7 @@ RUN mkdir -p /workspace/sub /workspace/shared-git
 
 # Copy package.json and install dependencies
 COPY package*.json ./
-RUN npm ci --only=production
+RUN npm install --only=production
 
 # Copy application source code
 COPY src/ ./src/
@@ -62,7 +62,7 @@ USER claude-sub
 
 # Set up Claude Code CLI configuration
 RUN mkdir -p /home/claude-sub/.config/claude
-COPY --chown=claude-sub:claude-sub docker/subordinate-ai/claude-config.json /home/claude-sub/.config/claude/config.json
+COPY --chown=claude-sub:claude-sub claude-config.json /home/claude-sub/.config/claude/config.json
 
 # Expose port for health checks
 EXPOSE 3001

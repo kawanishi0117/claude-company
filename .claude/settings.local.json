@@ -33,7 +33,8 @@
       "Bash(sed:*)",
       "Bash(pwsh:*)",
       "Bash(./quick-validation.sh:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(.start.ps1)"
     ],
     "deny": []
   }

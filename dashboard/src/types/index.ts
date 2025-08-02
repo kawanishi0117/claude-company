@@ -15,6 +15,7 @@ export type AgentStatus = 'idle' | 'working' | 'error' | 'offline';
 
 export interface PerformanceMetrics {
   tasksCompleted: number;
+  tasksFailed: number;
   successRate: number;
   averageExecutionTime: number;
   memoryUsage: number;
@@ -56,6 +57,8 @@ export interface Project {
   status: ProjectStatus;
   progress: number;
   tasks: Task[];
+  completedTasks: number;
+  totalTasks: number;
   startDate: Date;
   endDate?: Date;
   estimatedCompletion: Date;

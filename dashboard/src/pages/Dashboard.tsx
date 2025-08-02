@@ -27,6 +27,7 @@ const mockAgents: Agent[] = [
     lastActivity: new Date(Date.now() - 5 * 60 * 1000), // 5 minutes ago
     performance: {
       tasksCompleted: 45,
+      tasksFailed: 3,
       successRate: 94.2,
       averageExecutionTime: 1200,
       memoryUsage: 68.5,
@@ -61,6 +62,7 @@ const mockAgents: Agent[] = [
     lastActivity: new Date(Date.now() - 2 * 60 * 1000), // 2 minutes ago
     performance: {
       tasksCompleted: 28,
+      tasksFailed: 2,
       successRate: 89.3,
       averageExecutionTime: 1800,
       memoryUsage: 45.2,
@@ -95,6 +97,7 @@ const mockAgents: Agent[] = [
     lastActivity: new Date(Date.now() - 15 * 60 * 1000), // 15 minutes ago
     performance: {
       tasksCompleted: 33,
+      tasksFailed: 1,
       successRate: 91.8,
       averageExecutionTime: 1500,
       memoryUsage: 32.1,
@@ -117,6 +120,7 @@ const mockAgents: Agent[] = [
     lastActivity: new Date(Date.now() - 8 * 60 * 1000), // 8 minutes ago
     performance: {
       tasksCompleted: 19,
+      tasksFailed: 5,
       successRate: 84.2,
       averageExecutionTime: 2100,
       memoryUsage: 78.9,

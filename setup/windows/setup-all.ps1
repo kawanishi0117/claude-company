@@ -164,6 +164,14 @@ echo "[5/6] Installing Docker Engine..."
 DEBIAN_FRONTEND=noninteractive apt-get update -y
 DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
+# Install standalone docker-compose for compatibility
+echo "[5.5/6] Installing docker-compose standalone..."
+DOCKER_COMPOSE_VERSION="v2.23.0"
+curl -L "https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+chmod +x /usr/local/bin/docker-compose
+# Create symlink for compatibility
+ln -sf /usr/local/bin/docker-compose /usr/bin/docker-compose
+
 # Configure Docker to start on boot
 echo "[6/6] Configuring Docker..."
 # Add default user to docker group (get the actual username)
@@ -220,6 +228,10 @@ echo ""
 echo "===== Docker Installation Complete ====="
 echo "Docker version:"
 docker version || echo "Docker service not yet started. This is normal on first install."
+echo ""
+echo "Docker Compose version:"
+docker compose version || echo "Docker Compose plugin not available yet."
+docker-compose --version || echo "docker-compose standalone not available yet."
 echo ""
 echo "IMPORTANT: You need to restart WSL for all changes to take effect."
 echo "Run 'wsl --shutdown' from Windows, then start WSL again."
@@ -526,6 +538,17 @@ if ($AutoVerify -or $skipInstall) {
                 Write-Host $formattedVersion -ForegroundColor White
                 Write-Host "`nV Docker is running successfully!" -ForegroundColor Green
                 $dockerRunning = $true
+                
+                # Check docker-compose availability
+                Write-Host "`nChecking Docker Compose availability..." -ForegroundColor Cyan
+                $composeV2 = wsl -d $DistroName docker compose version 2>&1
+                if ($LASTEXITCODE -eq 0) {
+                    Write-Host "V Docker Compose v2 (plugin) installed" -ForegroundColor Green
+                }
+                $composeStandalone = wsl -d $DistroName docker-compose --version 2>&1
+                if ($LASTEXITCODE -eq 0) {
+                    Write-Host "V docker-compose (standalone) installed" -ForegroundColor Green
+                }
             } else {
                 Write-Host "! Docker is installed but not running properly:" -ForegroundColor Yellow
                 Write-Host $dockerVersion -ForegroundColor Gray
